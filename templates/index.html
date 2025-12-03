@@ -1,0 +1,55 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Deteksi Emosi Teks</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+<div class="page">
+    <header class="header">
+        <h1>🎧 Deteksi Emosi Teks</h1>
+        <p>Masukkan kalimat, sistem akan memprediksi emosi di dalamnya.</p>
+    </header>
+
+    <main class="main">
+        <section class="card input-card">
+            <h2>Input Teks</h2>
+            <form method="POST">
+                <label for="teks">Teks yang akan dianalisis</label>
+                <textarea
+                    id="teks"
+                    name="teks"
+                    rows="4"
+                    placeholder="Contoh: Aku sangat senang hari ini..."
+                >{{ input_text or '' }}</textarea>
+
+                <button type="submit">Prediksi Emosi</button>
+            </form>
+        </section>
+
+        <section class="card result-card">
+            <h2>Hasil Prediksi</h2>
+
+            {% if predicted_label %}
+                <p class="result-label">
+                    Emosi terdeteksi:
+                    <span class="badge">{{ predicted_label }}</span>
+                </p>
+            {% else %}
+                <p class="result-placeholder">
+                    Belum ada prediksi. Silakan masukkan teks dan klik tombol prediksi.
+                </p>
+            {% endif %}
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>ALPRO 2 – Kelompok 8</p>
+        <p>Front-end & integrasi: <strong>Kelompok 8</strong></p>
+    </footer>
+</div>
+</body>
+</html>

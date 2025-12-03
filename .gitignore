@@ -1,0 +1,5 @@
+# ignore virtual env
+uass/
+# python cache
+__pycache__/
+*.pyc
