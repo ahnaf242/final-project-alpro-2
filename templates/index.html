@@ -1,55 +1,182 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <title>Deteksi Emosi Teks</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deteksi Emosi Teks - UAS Alpro 2</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --bg: #f4f7f6;
+            --card-bg: #ffffff;
+            --text: #333;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .page {
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            margin-top: 20px;
+        }
+
+        .header h1 { color: var(--primary); font-weight: 600; }
+        .header p { color: #666; font-size: 0.9rem; }
+
+        .card {
+            background: var(--card-bg);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 10px;
+            color: #444;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-family: inherit;
+            resize: vertical;
+            transition: 0.3s;
+        }
+
+        textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: 0.3s;
+        }
+
+        button:hover { background-color: #357abd; }
+
+        /* Styling Hasil Prediksi */
+        .result-card h2 { font-size: 1.2rem; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px;}
+
+        .result-placeholder { color: #888; font-style: italic; text-align: center; }
+
+        .result-content { text-align: center; }
+        
+        .badge {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 50px;
+            color: white;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-top: 10px;
+            text-transform: uppercase;
+        }
+
+        /* Warna dinamis untuk emosi (Opsional) */
+        .badge.happy { background-color: #2ecc71; }
+        .badge.sadness { background-color: #3498db; }
+        .badge.anger { background-color: #e74c3c; }
+        .badge.fear { background-color: #9b59b6; }
+        .badge.love { background-color: #e91e63; }
+        .badge.surprise { background-color: #f1c40f; color: #333; }
+        .badge.default { background-color: var(--primary); }
+
+        .confidence {
+            display: block;
+            margin-top: 8px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+    </style>
 </head>
 <body>
+
 <div class="page">
     <header class="header">
         <h1>🎧 Deteksi Emosi Teks</h1>
-        <p>Masukkan kalimat, sistem akan memprediksi emosi di dalamnya.</p>
+        <p>Analisis Sentimen Menggunakan Bi-LSTM (Akurasi 86%)</p>
     </header>
 
-    <main class="main">
+    <main>
         <section class="card input-card">
-            <h2>Input Teks</h2>
-            <form method="POST">
-                <label for="teks">Teks yang akan dianalisis</label>
-                <textarea
-                    id="teks"
-                    name="teks"
-                    rows="4"
-                    placeholder="Contoh: Aku sangat senang hari ini..."
-                >{{ input_text or '' }}</textarea>
+            <form method="POST" action="/">
+                <label for="tweet">Masukkan kalimat:</label>
+                <textarea 
+                    id="tweet" 
+                    name="tweet" 
+                    rows="4" 
+                    placeholder="Contoh: Aku sangat bahagia hari ini karena lulus ujian..." 
+                    required>{{ input_text or '' }}</textarea>
 
-                <button type="submit">Prediksi Emosi</button>
+                <button type="submit">🔍 Prediksi Emosi</button>
             </form>
         </section>
 
         <section class="card result-card">
-            <h2>Hasil Prediksi</h2>
+            <h2>Hasil Analisis</h2>
 
             {% if predicted_label %}
-                <p class="result-label">
-                    Emosi terdeteksi:
-                    <span class="badge">{{ predicted_label }}</span>
-                </p>
+                <div class="result-content">
+                    <p>Sistem mendeteksi emosi:</p>
+                    <span class="badge {{ predicted_label|lower }}">{{ predicted_label }}</span>
+                    
+                    {% if confidence %}
+                        <span class="confidence">Tingkat Keyakinan: <strong>{{ confidence }}</strong></span>
+                    {% endif %}
+                </div>
             {% else %}
                 <p class="result-placeholder">
-                    Belum ada prediksi. Silakan masukkan teks dan klik tombol prediksi.
+                    Belum ada hasil. Silakan masukkan teks di atas.
                 </p>
             {% endif %}
         </section>
     </main>
 
     <footer class="footer">
-        <p>ALPRO 2 – Kelompok 8</p>
-        <p>Front-end & integrasi: <strong>Kelompok 8</strong></p>
+        <p>UAS ALPRO 2 &mdash; Kelompok 8</p>
+        <p>Dibuat dengan Flask & TensorFlow</p>
     </footer>
 </div>
+
 </body>
 </html>
