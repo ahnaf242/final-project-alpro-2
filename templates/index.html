@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detector | SentimenAI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- VARIABLE SAMA PERSIS DENGAN HOME.HTML --- */
+        :root {
+            --glass-bg: rgba(30, 30, 30, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            --primary: #0A84FF;
+            --text-main: #ffffff;
+            --text-sec: #a1a1aa;
+            
+            /* Warna Blob Dinamis (Default Biru/Ungu) */
+            --blob-color-1: #2f27ce;
+            --blob-color-2: #c20d9d;
+            --blob-color-3: #0A84FF;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Plus Jakarta Sans', sans-serif; transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1); }
+
+        body {
+            background-color: #000; /* Dark Mode Base */
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* --- AURORA BACKGROUND (PERSIS HOME.HTML) --- */
+        .aurora {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; overflow: hidden;
+            background: radial-gradient(circle at 50% 50%, #111, #000);
+        }
+        .blob {
+            position: absolute; filter: blur(80px); opacity: 0.5;
+            animation: move 10s infinite alternate;
+            transition: background 1s ease; /* Transisi warna halus */
+        }
+        .blob-1 { top: 10%; left: 20%; width: 500px; height: 500px; background: var(--blob-color-1); border-radius: 40% 60% 70% 30%; }
+        .blob-2 { bottom: 20%; right: 10%; width: 400px; height: 400px; background: var(--blob-color-2); border-radius: 60% 40% 30% 70%; animation-delay: -5s; }
+        .blob-3 { bottom: 10%; left: 30%; width: 300px; height: 300px; background: var(--blob-color-3); border-radius: 50%; animation-duration: 15s; }
+
+        @keyframes move {
+            0% { transform: translate(0, 0) rotate(0deg); }
+            100% { transform: translate(50px, 30px) rotate(20deg); }
+        }
+
+        /* --- LAYOUT UTAMA --- */
+        .app-wrapper {
+            display: flex; gap: 20px;
+            width: 95%; max-width: 1100px;
+            align-items: stretch;
+            padding: 20px 0;
+            height: 85vh; /* Agar pas di layar laptop */
+        }
+
+        /* --- GLASS CARD STYLE (DARK) --- */
+        .card-main, .card-history {
+            background: var(--glass-bg);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+            border-radius: 35px;
+            padding: 40px;
+            display: flex; flex-direction: column;
+        }
+
+        /* Card Kiri (Analisis) */
+        .card-main { flex: 1.5; position: relative; }
+
+        /* Card Kanan (History) */
+        .card-history { flex: 1; min-width: 300px; }
+
+        /* --- KOMPONEN UI --- */
+        .nav-link {
+            position: absolute; top: 30px; left: 30px;
+            text-decoration: none; font-weight: 600; font-size: 0.9rem;
+            color: rgba(255,255,255,0.7);
+            background: rgba(255,255,255,0.1); padding: 8px 16px; border-radius: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .nav-link:hover { background: rgba(255,255,255,0.2); color: white; }
+
+        h2 { 
+            font-weight: 800; font-size: 2.5rem; margin-top: 20px; 
+            background: linear-gradient(135deg, #fff 0%, #a5a5a5 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        p.subtitle { color: var(--text-sec); margin-bottom: 30px; font-weight: 400; }
+
+        /* Input Area */
+        textarea {
+            width: 100%; padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 25px;
+            font-size: 1.1rem; resize: none; outline: none;
+            background: rgba(0, 0, 0, 0.3); /* Dark Input */
+            color: white; margin-bottom: 25px;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+        }
+        textarea::placeholder { color: rgba(255,255,255,0.3); }
+        textarea:focus { border-color: var(--primary); background: rgba(0,0,0,0.5); }
+
+        /* Button */
+        button {
+            width: 100%; padding: 18px;
+            background: var(--primary); color: white;
+            border: none; border-radius: 25px;
+            font-weight: 700; font-size: 1.1rem; cursor: pointer;
+            box-shadow: 0 4px 20px rgba(10, 132, 255, 0.3);
+            transition: 0.3s;
+        }
+        button:hover { transform: translateY(-2px); filter: brightness(1.2); }
+        button:disabled { background: #333; color: #666; cursor: not-allowed; transform: none; box-shadow: none;}
+
+        /* Result Area */
+        .result-box { display: none; margin-top: auto; text-align: center; padding-top: 20px;}
+        .emoji { font-size: 5rem; display: block; margin-bottom: 10px; filter: drop-shadow(0 0 20px rgba(255,255,255,0.2)); }
+        .label { font-size: 2rem; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; color: white; }
+        .conf-badge { 
+            display: inline-block; margin-top: 5px; padding: 5px 15px;
+            background: rgba(255,255,255,0.1); border-radius: 20px;
+            font-size: 0.9rem; color: rgba(255,255,255,0.8);
+        }
+
+        /* --- HISTORY LIST (Dark Style) --- */
+        .history-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; padding-bottom: 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .history-header h3 { font-size: 1.2rem; color: white; }
+        .clear-btn { 
+            background: transparent; width: auto; padding: 5px 10px; 
+            color: #ff453a; font-size: 0.8rem; box-shadow: none; 
+        }
+        .clear-btn:hover { background: rgba(255, 69, 58, 0.2); transform: none; }
+
+        .history-list { flex-grow: 1; overflow-y: auto; padding-right: 5px; }
+        
+        /* Scrollbar Dark */
+        .history-list::-webkit-scrollbar { width: 5px; }
+        .history-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+
+        .history-item {
+            background: rgba(255,255,255,0.05);
+            padding: 15px; border-radius: 20px; margin-bottom: 10px;
+            display: flex; align-items: center; gap: 15px;
+            border: 1px solid transparent; cursor: default;
+        }
+        .history-item:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.1); }
+        
+        .h-emoji { font-size: 1.5rem; }
+        .h-content { flex: 1; overflow: hidden; }
+        .h-text { display: block; color: rgba(255,255,255,0.9); font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .h-meta { font-size: 0.75rem; color: rgba(255,255,255,0.5); margin-top: 4px; }
+        .h-label { font-weight: 700; text-transform: uppercase; }
+
+        /* --- COLOR THEMES (Untuk Warna Teks Label di History) --- */
+        .text-happy { color: #ffd60a; }
+        .text-anger { color: #ff453a; }
+        .text-sadness { color: #0a84ff; }
+        .text-fear { color: #bf5af2; }
+        .text-love { color: #ff375f; }
+        .text-neutral { color: #acacac; }
+
+        @media (max-width: 850px) {
+            .app-wrapper { flex-direction: column; height: auto; }
+            .card-history { height: 400px; }
+            h2 { font-size: 2rem; margin-top: 50px; } /* Jarak buat tombol home */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="aurora">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="app-wrapper animate__animated animate__fadeIn">
+        
+        <div class="card-main">
+            <a href="/" class="nav-link">← Home</a>
+            
+            <div style="text-align: center;">
+                <h2>Analisis Emosi</h2>
+                <p class="subtitle">IndoBERTweet AI Engine</p>
+            </div>
+
+            <textarea id="tweet" rows="5" placeholder="Tulis kalimat di sini... Contoh: 'Project ini bakal sukses besar!'"></textarea>
+            
+            <button id="btn" onclick="predict()">Analisis Sekarang</button>
+
+            <div id="result" class="result-box">
+                <span id="emoji" class="emoji animate__animated">🤖</span>
+                <div id="label" class="label">READY</div>
+                <div id="conf" class="conf-badge">Menunggu Input...</div>
+            </div>
+        </div>
+
+        <div class="card-history">
+            <div class="history-header">
+                <h3><i class="fa-solid fa-clock-rotate-left"></i> Riwayat</h3>
+                <button class="clear-btn" onclick="clearHistory()">Clear</button>
+            </div>
+            <div id="history-list" class="history-list">
+                <div style="text-align: center; color: rgba(255,255,255,0.3); margin-top: 50px; font-size: 0.9rem;">
+                    Belum ada riwayat.
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // CONFIG TEMA & WARNA BLOB
+        // Format: [Emoji, Label, ClassWarnaText, [WarnaBlob1, WarnaBlob2, WarnaBlob3]]
+        const themes = {
+            'happy':    { emoji: '🤩', label: 'Senang', class: 'text-happy',   blobs: ['#ffd60a', '#ff9f0a', '#f59e0b'] },
+            'joy':      { emoji: '🤩', label: 'Senang', class: 'text-happy',   blobs: ['#ffd60a', '#ff9f0a', '#f59e0b'] },
+            'anger':    { emoji: '🤬', label: 'Marah',  class: 'text-anger',   blobs: ['#ff453a', '#9f1239', '#7f1d1d'] },
+            'sadness':  { emoji: '😭', label: 'Sedih',  class: 'text-sadness', blobs: ['#0a84ff', '#1e40af', '#172554'] },
+            'fear':     { emoji: '😨', label: 'Takut',  class: 'text-fear',    blobs: ['#bf5af2', '#581c87', '#3b0764'] },
+            'love':     { emoji: '🥰', label: 'Cinta',  class: 'text-love',    blobs: ['#ff375f', '#be185d', '#831843'] },
+            'surprise': { emoji: '😲', label: 'Kaget',  class: 'text-happy',   blobs: ['#30d158', '#059669', '#064e3b'] }
+        };
+
+        const defaultBlobs = ['#2f27ce', '#c20d9d', '#0A84FF']; // Warna Default Home
+
+        async function predict() {
+            const input = document.getElementById('tweet');
+            const btn = document.getElementById('btn');
+            
+            if(!input.value.trim()) { input.focus(); return; }
+
+            // UI Loading state
+            const originalBtn = btn.innerText;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memproses AI...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/predict', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ tweet: input.value })
+                });
+
+                const data = await res.json();
+
+                if(data.status === 'success') {
+                    const labelRaw = data.data.prediction.toLowerCase();
+                    const conf = data.data.confidence;
+                    
+                    // Ambil config
+                    const theme = themes[labelRaw] || { emoji: '🤖', label: labelRaw, class: 'text-neutral', blobs: defaultBlobs };
+
+                    // 1. UPDATE RESULT
+                    document.getElementById('emoji').innerText = theme.emoji;
+                    document.getElementById('label').innerText = theme.label;
+                    document.getElementById('conf').innerText = `Akurasi AI: ${conf}`;
+                    
+                    // Efek Bounce
+                    const emojiEl = document.getElementById('emoji');
+                    emojiEl.classList.remove('animate__bounceIn');
+                    void emojiEl.offsetWidth; 
+                    emojiEl.classList.add('animate__bounceIn');
+
+                    document.getElementById('result').style.display = 'block';
+
+                    // 2. GANTI WARNA BACKGROUND (Aurora Blobs)
+                    updateAurora(theme.blobs);
+
+                    // 3. TAMBAH KE HISTORY
+                    addToHistory(input.value, theme.label, theme.emoji, conf, theme.class);
+
+                } else {
+                    alert("Error: " + data.message);
+                }
+
+            } catch (err) {
+                console.error(err);
+                alert("Gagal koneksi ke server.");
+            } finally {
+                btn.innerHTML = originalBtn;
+                btn.disabled = false;
+            }
+        }
+
+        // --- FUNGSI GANTI WARNA BACKGROUND ---
+        function updateAurora(colors) {
+            const root = document.documentElement;
+            // Ubah variabel CSS secara dinamis
+            root.style.setProperty('--blob-color-1', colors[0]);
+            root.style.setProperty('--blob-color-2', colors[1]);
+            root.style.setProperty('--blob-color-3', colors[2]);
+        }
+
+        // --- FUNGSI HISTORY ---
+        function addToHistory(text, label, emoji, conf, textClass) {
+            const list = document.getElementById('history-list');
+            if(list.innerText.includes('Belum ada')) list.innerHTML = '';
+
+            const item = `
+                <div class="history-item animate__animated animate__fadeInLeft">
+                    <div class="h-emoji">${emoji}</div>
+                    <div class="h-content">
+                        <span class="h-text" title="${text}">${text}</span>
+                        <div class="h-meta">
+                            <span class="h-label ${textClass}">${label}</span> • ${conf}
+                        </div>
+                    </div>
+                </div>
+            `;
+            list.insertAdjacentHTML('afterbegin', item);
+            saveHistory(text, label, emoji, conf, textClass);
+        }
+
+        function saveHistory(text, label, emoji, conf, textClass) {
+            let hist = JSON.parse(localStorage.getItem('sentiment_dark_history')) || [];
+            hist.unshift({ text, label, emoji, conf, textClass });
+            if(hist.length > 50) hist.pop();
+            localStorage.setItem('sentiment_dark_history', JSON.stringify(hist));
+        }
+
+        function loadHistory() {
+            const hist = JSON.parse(localStorage.getItem('sentiment_dark_history')) || [];
+            const list = document.getElementById('history-list');
+            if(hist.length > 0) {
+                list.innerHTML = '';
+                hist.forEach(h => {
+                    const item = `
+                        <div class="history-item">
+                            <div class="h-emoji">${h.emoji}</div>
+                            <div class="h-content">
+                                <span class="h-text" title="${h.text}">${h.text}</span>
+                                <div class="h-meta">
+                                    <span class="h-label ${h.textClass}">${h.label}</span> • ${h.conf}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    list.insertAdjacentHTML('beforeend', item);
+                });
+            }
+        }
+
+        function clearHistory() {
+            localStorage.removeItem('sentiment_dark_history');
+            document.getElementById('history-list').innerHTML = `<div style="text-align: center; color: rgba(255,255,255,0.3); margin-top: 50px; font-size: 0.9rem;">Belum ada riwayat.</div>`;
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', loadHistory);
+        document.getElementById('tweet').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); predict(); }
+        });
+
+    </script>
+</body>
+</html>

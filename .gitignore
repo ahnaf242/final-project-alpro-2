@@ -1,0 +1,11 @@
+# Folder Environment
+venv/
+__pycache__/
+
+# Folder Model & File Besar (WAJIB DI-IGNORE)
+my_bert_model/
+*.h5
+*.zip
+
+# File System
+.DS_Store
