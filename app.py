@@ -105,12 +105,10 @@ def clean_text_bert(text):
 # ==========================================
 # 3. ROUTES
 # ==========================================
+# Route utama langsung ke aplikasi
 @app.route('/')
-def home():
-    return render_template('home.html')
-
-@app.route('/app')
-def detector():
+def main_page():
+    # Flask akan mencari file ini di dalam folder 'templates'
     return render_template('index.html')
 
 @app.route('/api/predict', methods=['POST'])
