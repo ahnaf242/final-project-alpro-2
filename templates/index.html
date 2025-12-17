@@ -1,55 +1,427 @@
-
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="neutral">
 <head>
     <meta charset="UTF-8">
-    <title>Deteksi Emosi Teks</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoulSense - Inside Out Edition</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&f[]=satoshi@300,400,500,700&display=swap" rel="stylesheet">
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        joy: '#fbbf24',
+                        sadness: '#60a5fa',
+                        anger: '#f87171',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --bg-color: #Fdfbf7;
+            --text-color: #1F2937;
+            --accent-color: #6366f1;
+            --card-bg: #ffffff;
+        }
+
+        /* TEMA LOGIC */
+        [data-theme="joy"] { --bg-color: #fffbeb; --text-color: #78350f; --accent-color: #d97706; }
+        [data-theme="sadness"] { --bg-color: #eff6ff; --text-color: #1e3a8a; --accent-color: #2563eb; }
+        [data-theme="anger"] { --bg-color: #fef2f2; --text-color: #7f1d1d; --accent-color: #dc2626; }
+
+        body {
+            font-family: 'Satoshi', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.5s ease, color 0.5s ease;
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, h4, .font-display { font-family: 'Clash Display', sans-serif; }
+
+        /* NAVBAR FLOATING GLASS */
+        .navbar-floating {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+            border-radius: 999px;
+            margin-top: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        /* CARD STYLE */
+        .card-custom {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.6);
+            transition: all 0.3s ease;
+        }
+        .card-custom:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+
+        /* PAGE TRANSITION */
+        .page-content {
+            display: none; opacity: 0; transform: translateY(10px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+        .page-content.active { display: block; opacity: 1; transform: translateY(0); }
+
+        /* NAV LINK */
+        .nav-link { 
+            position: relative; font-weight: 500; color: #6B7280; 
+            padding: 8px 20px; border-radius: 99px; transition: all 0.3s;
+        }
+        .nav-link:hover { background: rgba(0,0,0,0.05); }
+        .nav-link.active { 
+            background: var(--text-color); color: #fff; font-weight: 600; 
+        }
+
+        /* LOADING ORB */
+        .loader-container { position: relative; width: 100px; height: 100px; }
+        .memory-orb {
+            width: 100%; height: 100%; border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #fff 0%, #fbbf24 40%, #d97706 100%);
+            box-shadow: 0 0 30px #fbbf24;
+            animation: spinOrb 2s infinite linear, changeMood 6s infinite alternate;
+        }
+        @keyframes spinOrb { 0% { transform: scale(0.9); } 50% { transform: scale(1.1); } 100% { transform: scale(0.9); } }
+        @keyframes changeMood {
+            0% { background: radial-gradient(circle at 30% 30%, #fff 0%, #fbbf24 40%, #d97706 100%); }
+            33% { background: radial-gradient(circle at 30% 30%, #fff 0%, #60a5fa 40%, #2563eb 100%); }
+            66% { background: radial-gradient(circle at 30% 30%, #fff 0%, #f87171 40%, #dc2626 100%); }
+        }
+
+        /* HISTORY ITEM ANIMATION */
+        .history-item { animation: slideIn 0.5s ease forwards; opacity: 0; transform: translateX(-20px); }
+        @keyframes slideIn { to { opacity: 1; transform: translateX(0); } }
+    </style>
 </head>
-<body>
-<div class="page">
-    <header class="header">
-        <h1>🎧 Deteksi Emosi Teks</h1>
-        <p>Masukkan kalimat, sistem akan memprediksi emosi di dalamnya.</p>
-    </header>
+<body class="pb-0">
 
-    <main class="main">
-        <section class="card input-card">
-            <h2>Input Teks</h2>
-            <form method="POST">
-                <label for="teks">Teks yang akan dianalisis</label>
-                <textarea
-                    id="teks"
-                    name="teks"
-                    rows="4"
-                    placeholder="Contoh: Aku sangat senang hari ini..."
-                >{{ input_text or '' }}</textarea>
+    <div class="fixed top-0 left-0 w-full z-50 px-4 flex justify-center">
+        <nav class="navbar-floating w-full max-w-5xl flex justify-between items-center px-6 py-3">
+            <div onclick="switchPage('home')" class="cursor-pointer flex items-center gap-2 group">
+                <div class="w-10 h-10 bg-gray-900 rounded-full flex items-center justify-center text-white shadow-lg transition" style="background-color: var(--text-color)">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+                </div>
+                <div><h1 class="font-display font-bold text-xl tracking-tight leading-none">SoulSense<span style="color: var(--accent-color)">.</span></h1></div>
+            </div>
+            
+            <div class="hidden md:flex items-center gap-1 text-sm bg-white/50 p-1 rounded-full border border-white/50 backdrop-blur-sm">
+                <button onclick="switchPage('home')" id="nav-home" class="nav-link active">Beranda</button>
+                <button onclick="switchPage('features')" id="nav-features" class="nav-link">Fitur</button>
+                <button onclick="switchPage('about')" id="nav-about" class="nav-link">Tim Kami</button>
+                <button onclick="switchPage('history')" id="nav-history" class="nav-link">Riwayat</button>
+            </div>
 
-                <button type="submit">Prediksi Emosi</button>
-            </form>
-        </section>
+            <div class="flex items-center gap-2">
+                <button onclick="toggleTheme()" class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-md hover:scale-110 transition border border-gray-100" title="Ganti Tema Emosi">
+                    <i data-lucide="palette" class="w-4 h-4 text-gray-600"></i>
+                </button>
 
-        <section class="card result-card">
-            <h2>Hasil Prediksi</h2>
+                <button onclick="switchPage('app')" class="text-white px-5 py-2 rounded-full text-sm font-bold shadow-lg transition transform hover:-translate-y-0.5" style="background-color: var(--accent-color)">
+                    Cek Emosi
+                </button>
+            </div>
+        </nav>
+    </div>
 
-            {% if predicted_label %}
-                <p class="result-label">
-                    Emosi terdeteksi:
-                    <span class="badge">{{ predicted_label }}</span>
-                </p>
-            {% else %}
-                <p class="result-placeholder">
-                    Belum ada prediksi. Silakan masukkan teks dan klik tombol prediksi.
-                </p>
-            {% endif %}
-        </section>
+    <div class="h-28"></div>
+
+    <main id="page-home" class="page-content active flex-grow">
+        <div class="container mx-auto px-6 mb-12">
+            <div class="flex flex-col lg:flex-row items-center gap-10 min-h-[60vh]">
+                <div class="lg:w-1/2 text-center lg:text-left z-10">
+                    <div class="inline-block px-4 py-1.5 rounded-full bg-white border border-gray-200 text-xs font-bold uppercase tracking-widest mb-6 shadow-sm">
+                        ✨ Inside Out Inspired AI
+                    </div>
+                    <h1 class="text-5xl lg:text-7xl font-display font-bold leading-[1.1] mb-6">
+                        Apa Warna<br>
+                        <span style="color: var(--accent-color)">Emosimu Hari Ini?</span>
+                    </h1>
+                    <p class="text-lg opacity-70 mb-8 leading-relaxed">
+                        Seperti Riley, kita punya banyak "Pulau Kepribadian". Ceritakan harimu, dan biarkan AI kami merapikan bola memorimu.
+                    </p>
+                    <button onclick="switchPage('app')" class="text-white px-8 py-4 rounded-full font-bold shadow-xl hover:shadow-2xl hover:-translate-y-1 transition flex items-center justify-center gap-2 mx-auto lg:mx-0" style="background-color: var(--text-color)">
+                        Mulai Analisis <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <div class="lg:w-1/2 relative flex justify-center">
+                    <div class="absolute inset-0 bg-gradient-to-tr from-yellow-200 to-blue-200 rounded-full blur-[80px] opacity-40 -z-10 animate-pulse"></div>
+                    <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000&auto=format&fit=crop" 
+                         alt="Inside Out Core Memories" 
+                         class="w-full max-w-[480px] object-cover rounded-[3rem] shadow-2xl rotate-2 hover:rotate-0 transition duration-700 border-4 border-white">
+                </div>
+            </div>
+        </div>
     </main>
 
-    <footer class="footer">
-        <p>ALPRO 2 – Kelompok 8</p>
-        <p>Front-end & integrasi: <strong>Kelompok 8</strong></p>
-    </footer>
-</div>
+    <main id="page-features" class="page-content container mx-auto px-6 flex-grow">
+        <div class="text-center max-w-2xl mx-auto mb-10 mt-6">
+            <h2 class="text-3xl font-display font-bold mb-4">Markas Pusat (Headquarters)</h2>
+            <p class="opacity-60">Sistem cerdas kami yang memahami nuansa perasaanmu.</p>
+        </div>
+        <div class="grid md:grid-cols-3 gap-6 mb-12">
+            <div class="card-custom p-6 rounded-3xl">
+                <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mb-4 text-yellow-600"><i data-lucide="sun" class="w-6 h-6"></i></div>
+                <h3 class="font-bold text-lg">Joy Detector</h3>
+                <p class="text-sm opacity-60 mt-2">Mendeteksi kebahagiaan untuk disimpan sebagai Memori Inti.</p>
+            </div>
+            <div class="card-custom p-6 rounded-3xl">
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4 text-blue-600"><i data-lucide="cloud-rain" class="w-6 h-6"></i></div>
+                <h3 class="font-bold text-lg">Sadness Validator</h3>
+                <p class="text-sm opacity-60 mt-2">Memvalidasi kesedihan sebagai bentuk empati yang mendalam.</p>
+            </div>
+            <div class="card-custom p-6 rounded-3xl">
+                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4 text-red-600"><i data-lucide="flame" class="w-6 h-6"></i></div>
+                <h3 class="font-bold text-lg">Anger Manager</h3>
+                <p class="text-sm opacity-60 mt-2">Membantu menyalurkan energi panas menjadi motivasi.</p>
+            </div>
+        </div>
+    </main>
+
+    <main id="page-about" class="page-content container mx-auto px-6 flex-grow">
+        <div class="text-center mb-10 mt-6">
+            <h2 class="text-3xl font-display font-bold">Para Pengendali Emosi</h2>
+            <p class="opacity-60">Kelompok 8 Squad</p>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6 w-full max-w-5xl mx-auto mb-12">
+            <div class="card-custom p-4 rounded-[2rem] text-center border border-gray-100 shadow-sm hover:shadow-lg transition">
+                <img src="https://cdn-icons-png.flaticon.com/512/3768/3768771.png" class="w-24 h-24 mx-auto mb-3 object-contain hover:scale-110 transition">
+                <h3 class="font-bold text-gray-900">Bhunaya</h3>
+                <p class="text-[10px] uppercase font-bold text-blue-500 bg-blue-50 py-1 rounded-md mt-1">AI Engineer</p>
+            </div>
+            <div class="card-custom p-4 rounded-[2rem] text-center border border-gray-100 shadow-sm hover:shadow-lg transition">
+                <img src="https://cdn-icons-png.flaticon.com/512/3768/3768763.png" class="w-24 h-24 mx-auto mb-3 object-contain hover:scale-110 transition">
+                <h3 class="font-bold text-gray-900">Ahnaf</h3>
+                <p class="text-[10px] uppercase font-bold text-orange-500 bg-orange-50 py-1 rounded-md mt-1">Backend</p>
+            </div>
+            <div class="card-custom p-4 rounded-[2rem] text-center border border-gray-100 shadow-sm hover:shadow-lg transition">
+                <img src="https://cdn-icons-png.flaticon.com/512/3768/3768749.png" class="w-24 h-24 mx-auto mb-3 object-contain hover:scale-110 transition">
+                <h3 class="font-bold text-gray-900">Dharma</h3>
+                <p class="text-[10px] uppercase font-bold text-purple-500 bg-purple-50 py-1 rounded-md mt-1">Frontend</p>
+            </div>
+            <div class="card-custom p-4 rounded-[2rem] text-center border border-gray-100 shadow-sm hover:shadow-lg transition border-pink-200">
+                <img src="https://cdn-icons-png.flaticon.com/512/3768/3768799.png" class="w-24 h-24 mx-auto mb-3 object-contain hover:scale-110 transition">
+                <h3 class="font-bold text-pink-600">Tasyfia</h3>
+                <p class="text-[10px] uppercase font-bold text-pink-500 bg-pink-50 py-1 rounded-md mt-1">UI/UX</p>
+            </div>
+        </div>
+    </main>
+
+    <main id="page-history" class="page-content container mx-auto px-6 flex-grow">
+        <div class="max-w-2xl mx-auto mt-6 mb-12">
+            <div class="flex justify-between items-center mb-8">
+                <h2 class="text-3xl font-display font-bold">Riwayat Memori</h2>
+                <button onclick="clearHistory()" class="text-xs text-red-500 font-bold uppercase hover:bg-red-50 px-3 py-2 rounded-full transition">
+                    Hapus Semua
+                </button>
+            </div>
+            
+            <div id="history-container" class="space-y-4">
+                </div>
+            
+            <div id="empty-history" class="hidden text-center py-12 bg-white rounded-[2rem] border border-dashed border-gray-300">
+                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">
+                    <i data-lucide="ghost" class="w-8 h-8"></i>
+                </div>
+                <p class="opacity-50">Belum ada memori yang tersimpan.</p>
+            </div>
+        </div>
+    </main>
+
+    <main id="page-app" class="page-content container mx-auto px-6 flex-grow">
+        <div class="flex flex-col items-center mt-4 mb-12">
+            <div class="w-full max-w-3xl card-custom rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden min-h-[450px] flex flex-col justify-center">
+                
+                <div id="view-input" class="relative z-10">
+                    <h2 class="text-2xl font-bold mb-4 text-center">Buat Memori Baru</h2>
+                    <textarea id="userText" class="w-full h-40 bg-white/50 p-6 rounded-[2rem] border-2 border-dashed border-gray-300 focus:border-indigo-400 outline-none resize-none text-lg transition-all" 
+                    placeholder="Ceritakan apa yang kamu rasakan..."></textarea>
+                    <div class="mt-6 flex justify-center">
+                        <button onclick="analyze()" class="text-white px-8 py-3 rounded-full font-bold hover:scale-105 transition shadow-lg flex items-center gap-2" style="background-color: var(--text-color)">
+                            Analisis Memori <i data-lucide="sparkles" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="view-loading" class="hidden flex-col items-center justify-center py-8 text-center relative z-10">
+                    <div class="loader-container mb-6"><div class="memory-orb"></div></div>
+                    <h3 class="text-xl font-bold">Sedang Menyortir Emosi...</h3>
+                </div>
+
+                <div id="view-result" class="hidden text-center relative z-10">
+                    <div class="bg-white/60 rounded-[2rem] p-6 border border-white">
+                        <div class="flex flex-col items-center">
+                            <div id="result-img-container" class="w-32 h-32 mb-4"></div>
+                            <h2 id="result-text" class="text-3xl font-display font-bold">Netral</h2>
+                            <p class="text-sm opacity-70 mt-2 max-w-md mx-auto" id="insight-text">Insight...</p>
+                            <div class="w-full max-w-xs bg-gray-200 h-2 rounded-full mt-4 mx-auto overflow-hidden">
+                                <div id="confidence-bar" class="h-full w-0 transition-all duration-1000"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <button onclick="resetApp()" class="mt-6 font-bold text-xs uppercase flex items-center gap-2 mx-auto hover:opacity-70">
+                        <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Coba Lagi
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        // === THEME SWITCHER LOGIC ===
+        const themes = ['neutral', 'joy', 'sadness', 'anger'];
+        let currentThemeIndex = 0;
+
+        function toggleTheme() {
+            currentThemeIndex = (currentThemeIndex + 1) % themes.length;
+            const newTheme = themes[currentThemeIndex];
+            document.documentElement.setAttribute('data-theme', newTheme);
+        }
+
+        // === NAVIGATION ===
+        function switchPage(pageId) {
+            document.querySelectorAll('.page-content').forEach(p => p.classList.remove('active'));
+            document.getElementById('page-' + pageId).classList.add('active');
+            
+            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+            const nav = document.getElementById('nav-' + pageId);
+            if(nav) nav.classList.add('active');
+            
+            if(pageId === 'history') loadHistory(); // LOAD HISTORY SAAT BUKA HALAMAN
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // === ANALYSIS LOGIC ===
+        function analyze() {
+            const text = document.getElementById('userText').value;
+            if(!text) { alert("Isi dulu curhatannya bestie!"); return; }
+
+            document.getElementById('view-input').classList.add('hidden');
+            document.getElementById('view-loading').classList.remove('hidden');
+            document.getElementById('view-loading').classList.add('flex');
+
+            setTimeout(() => {
+                document.getElementById('view-loading').classList.add('hidden');
+                document.getElementById('view-loading').classList.remove('flex');
+                document.getElementById('view-result').classList.remove('hidden');
+
+                const lower = text.toLowerCase();
+                let emotion = "Tenang (Netral)";
+                let imgUrl = "https://cdn-icons-png.flaticon.com/512/742/742927.png"; 
+                let insight = "Stabil. Tidak ada gejolak emosi yang dominan.";
+                let color = "#9ca3af";
+                let themeKey = "neutral";
+
+                // LOGIKA SIMPLE
+                if(lower.includes("senang") || lower.includes("happy") || lower.includes("suka") || lower.includes("joy")) {
+                    emotion = "JOY (Bahagia)"; color = "#facc15"; themeKey = "joy";
+                    imgUrl = "https://cdn-icons-png.flaticon.com/512/187/187159.png"; 
+                    insight = "Joy memegang kendali! Pertahankan energi positif ini.";
+                } else if(lower.includes("sedih") || lower.includes("nangis") || lower.includes("kecewa")) {
+                    emotion = "SADNESS (Sedih)"; color = "#3b82f6"; themeKey = "sadness";
+                    imgUrl = "https://cdn-icons-png.flaticon.com/512/187/187150.png";
+                    insight = "Sadness mengambil alih. Menangislah jika perlu.";
+                } else if(lower.includes("marah") || lower.includes("kesal") || lower.includes("benci")) {
+                    emotion = "ANGER (Marah)"; color = "#ef4444"; themeKey = "anger";
+                    imgUrl = "https://cdn-icons-png.flaticon.com/512/187/187142.png";
+                    insight = "Anger sedang menyala! Hati-hati jangan meledak.";
+                }
+
+                // TAMPILKAN HASIL
+                document.getElementById('result-text').innerText = emotion;
+                document.getElementById('result-text').style.color = color;
+                document.getElementById('insight-text').innerText = insight;
+                document.getElementById('result-img-container').innerHTML = `<img src="${imgUrl}" class="w-full h-full object-contain animate-bounce">`;
+                document.getElementById('confidence-bar').style.backgroundColor = color;
+                document.getElementById('confidence-bar').style.width = "85%";
+
+                // === AUTO GANTI TEMA SESUAI HASIL ===
+                document.documentElement.setAttribute('data-theme', themeKey);
+
+                // === SIMPAN KE RIWAYAT (LOCAL STORAGE) ===
+                saveToHistory(emotion, text, color, imgUrl);
+
+            }, 2000);
+        }
+
+        // === HISTORY FUNCTIONS ===
+        function saveToHistory(emotion, text, color, icon) {
+            const history = JSON.parse(localStorage.getItem('emotionHistory')) || [];
+            const newEntry = {
+                id: Date.now(),
+                date: new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' }),
+                time: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
+                emotion: emotion,
+                text: text,
+                color: color,
+                icon: icon
+            };
+            history.unshift(newEntry); // Tambah ke paling atas
+            localStorage.setItem('emotionHistory', JSON.stringify(history));
+        }
+
+        function loadHistory() {
+            const history = JSON.parse(localStorage.getItem('emotionHistory')) || [];
+            const container = document.getElementById('history-container');
+            const emptyState = document.getElementById('empty-history');
+
+            container.innerHTML = ""; // Bersihkan dulu
+
+            if (history.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                history.forEach((item, index) => {
+                    const html = `
+                        <div class="history-item bg-white p-5 rounded-3xl border border-gray-100 shadow-sm flex items-start gap-4" style="animation-delay: ${index * 0.1}s">
+                            <div class="w-12 h-12 rounded-full flex-shrink-0 bg-gray-50 flex items-center justify-center border border-gray-100">
+                                <img src="${item.icon}" class="w-8 h-8">
+                            </div>
+                            <div class="w-full">
+                                <div class="flex justify-between items-start mb-1">
+                                    <h4 class="font-bold text-lg" style="color: ${item.color}">${item.emotion}</h4>
+                                    <span class="text-[10px] text-gray-400 font-medium bg-gray-50 px-2 py-1 rounded-full">${item.date} • ${item.time}</span>
+                                </div>
+                                <p class="text-gray-500 text-sm line-clamp-2 italic">"${item.text}"</p>
+                            </div>
+                        </div>
+                    `;
+                    container.innerHTML += html;
+                });
+            }
+        }
+
+        function clearHistory() {
+            if(confirm("Yakin mau hapus semua kenangan?")) {
+                localStorage.removeItem('emotionHistory');
+                loadHistory();
+            }
+        }
+
+        function resetApp() {
+            document.getElementById('view-result').classList.add('hidden');
+            document.getElementById('view-input').classList.remove('hidden');
+            document.getElementById('userText').value = "";
+            document.getElementById('confidence-bar').style.width = "0%";
+            document.documentElement.setAttribute('data-theme', 'neutral'); // Balik ke netral
+        }
+    </script>
 </body>
 </html>

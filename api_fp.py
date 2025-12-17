@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request
-from fp import predict_emotion   # ambil fungsi dari backend
+from fp import predict_emotion   # ambil fungsi dari backend (pakai model .h5)
 
 app = Flask(__name__)
 
@@ -27,4 +27,5 @@ def index():
     )
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    # debug tetap nyala, tapi tanpa auto-reloader
+    app.run(debug=True, use_reloader=False)
