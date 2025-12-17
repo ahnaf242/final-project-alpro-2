@@ -16,9 +16,11 @@
             theme: {
                 extend: {
                     colors: {
-                        joy: '#fbbf24',
-                        sadness: '#60a5fa',
-                        anger: '#f87171',
+                        joy: '#fbbf24',     // Happy
+                        sadness: '#60a5fa', // Sadness
+                        anger: '#f87171',   // Anger
+                        fear: '#a78bfa',    // Fear (Ungu)
+                        love: '#f472b6',    // Love (Pink)
                     }
                 }
             }
@@ -34,10 +36,15 @@
         }
 
         /* TEMA LOGIC */
+        [data-theme="neutral"] { --bg-color: #Fdfbf7; --text-color: #1F2937; --accent-color: #6366f1; }
         [data-theme="joy"] { --bg-color: #fffbeb; --text-color: #78350f; --accent-color: #d97706; }
         [data-theme="sadness"] { --bg-color: #eff6ff; --text-color: #1e3a8a; --accent-color: #2563eb; }
         [data-theme="anger"] { --bg-color: #fef2f2; --text-color: #7f1d1d; --accent-color: #dc2626; }
-
+        
+        /* TAMBAHAN BARU */
+        [data-theme="fear"] { --bg-color: #f5f3ff; --text-color: #5b21b6; --accent-color: #7c3aed; } /* Ungu */
+        [data-theme="love"] { --bg-color: #fdf2f8; --text-color: #831843; --accent-color: #db2777; } /* Pink */
+        
         body {
             font-family: 'Satoshi', sans-serif;
             background-color: var(--bg-color);
@@ -173,22 +180,49 @@
             <h2 class="text-3xl font-display font-bold mb-4">Markas Pusat (Headquarters)</h2>
             <p class="opacity-60">Sistem cerdas kami yang memahami nuansa perasaanmu.</p>
         </div>
-        <div class="grid md:grid-cols-3 gap-6 mb-12">
-            <div class="card-custom p-6 rounded-3xl">
-                <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mb-4 text-yellow-600"><i data-lucide="sun" class="w-6 h-6"></i></div>
+        
+        <div class="flex flex-wrap justify-center gap-6 mb-12">
+            
+            <div class="card-custom p-6 rounded-3xl w-full md:w-[30%] min-w-[280px]">
+                <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mb-4 text-yellow-600">
+                    <i data-lucide="sun" class="w-6 h-6"></i>
+                </div>
                 <h3 class="font-bold text-lg">Joy Detector</h3>
                 <p class="text-sm opacity-60 mt-2">Mendeteksi kebahagiaan untuk disimpan sebagai Memori Inti.</p>
             </div>
-            <div class="card-custom p-6 rounded-3xl">
-                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4 text-blue-600"><i data-lucide="cloud-rain" class="w-6 h-6"></i></div>
+
+            <div class="card-custom p-6 rounded-3xl w-full md:w-[30%] min-w-[280px]">
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4 text-blue-600">
+                    <i data-lucide="cloud-rain" class="w-6 h-6"></i>
+                </div>
                 <h3 class="font-bold text-lg">Sadness Validator</h3>
                 <p class="text-sm opacity-60 mt-2">Memvalidasi kesedihan sebagai bentuk empati yang mendalam.</p>
             </div>
-            <div class="card-custom p-6 rounded-3xl">
-                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4 text-red-600"><i data-lucide="flame" class="w-6 h-6"></i></div>
+
+            <div class="card-custom p-6 rounded-3xl w-full md:w-[30%] min-w-[280px]">
+                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4 text-red-600">
+                    <i data-lucide="flame" class="w-6 h-6"></i>
+                </div>
                 <h3 class="font-bold text-lg">Anger Manager</h3>
-                <p class="text-sm opacity-60 mt-2">Membantu menyalurkan energi panas menjadi motivasi.</p>
+                <p class="text-sm opacity-60 mt-2">Membantu menyalurkan energi panas menjadi motivasi positif.</p>
             </div>
+
+            <div class="card-custom p-6 rounded-3xl w-full md:w-[30%] min-w-[280px]">
+                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-4 text-purple-600">
+                    <i data-lucide="shield-alert" class="w-6 h-6"></i>
+                </div>
+                <h3 class="font-bold text-lg">Fear/Anxiety System</h3>
+                <p class="text-sm opacity-60 mt-2">Radar waspada yang melindungimu dari potensi bahaya atau kecemasan.</p>
+            </div>
+
+            <div class="card-custom p-6 rounded-3xl w-full md:w-[30%] min-w-[280px]">
+                <div class="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center mb-4 text-pink-600">
+                    <i data-lucide="heart" class="w-6 h-6"></i>
+                </div>
+                <h3 class="font-bold text-lg">Love Sensor</h3>
+                <p class="text-sm opacity-60 mt-2">Menangkap momen kasih sayang dan koneksi hangat dengan sesama.</p>
+            </div>
+
         </div>
     </main>
 
@@ -335,27 +369,55 @@
                 const prediction = result.data.prediction; // Contoh: 'happy', 'sadness'
                 const confidence = result.data.confidence; // Contoh: '98.5%'
 
-                // 4. MAPPING KE TAMPILAN (Warna & Icon)
+                // 4. MAPPING KE TAMPILAN (5 EMOSI LENGKAP)
                 let uiData = { emotion: "NETRAL", color: "#9ca3af", theme: "neutral", img: "", insight: "" };
 
-                // Sesuaikan dengan label model kamu: ['anger', 'fear', 'happy', 'love', 'sadness']
-                if (prediction === 'happy' || prediction === 'love') {
+                // Normalisasi string dari backend (jaga-jaga huruf besar/kecil)
+                const label = prediction.toLowerCase();
+
+                if (label === 'happy') {
                     uiData = {
-                        emotion: "JOY (Bahagia)", color: "#facc15", theme: "joy",
-                        img: "https://cdn-icons-png.flaticon.com/512/187/187159.png",
-                        insight: "Energi positif terdeteksi! Pertahankan vibes ini."
+                        emotion: "JOY (Bahagia)", 
+                        color: "#facc15", 
+                        theme: "joy",
+                        img: "https://cdn-icons-png.flaticon.com/512/187/187159.png", // Icon Senyum
+                        insight: "Energi positif meluap! Pertahankan vibes ini."
                     };
-                } else if (prediction === 'sadness' || prediction === 'fear') {
+                } 
+                else if (label === 'sadness') {
                     uiData = {
-                        emotion: "SADNESS (Sedih)", color: "#3b82f6", theme: "sadness",
-                        img: "https://cdn-icons-png.flaticon.com/512/187/187150.png",
-                        insight: "Tidak apa-apa merasa sedih. Validasi perasaanmu."
+                        emotion: "SADNESS (Sedih)", 
+                        color: "#3b82f6", 
+                        theme: "sadness",
+                        img: "https://cdn-icons-png.flaticon.com/512/187/187150.png", // Icon Nangis
+                        insight: "Tidak apa-apa merasa sedih. Validasi perasaanmu itu penting."
                     };
-                } else if (prediction === 'anger') {
+                } 
+                else if (label === 'anger') {
                     uiData = {
-                        emotion: "ANGER (Marah)", color: "#ef4444", theme: "anger",
-                        img: "https://cdn-icons-png.flaticon.com/512/187/187142.png",
-                        insight: "Api amarah sedang menyala. Tarik napas dalam-dalam."
+                        emotion: "ANGER (Marah)", 
+                        color: "#ef4444", 
+                        theme: "anger",
+                        img: "https://cdn-icons-png.flaticon.com/512/187/187142.png", // Icon Marah
+                        insight: "Api amarah sedang menyala. Coba tarik napas dalam-dalam."
+                    };
+                }
+                else if (label === 'fear') {
+                    uiData = {
+                        emotion: "FEAR (Takut/Cemas)", 
+                        color: "#a78bfa", 
+                        theme: "fear",
+                        img: "https://cdn-icons-png.flaticon.com/512/187/187154.png", // Cari icon orang kaget/takut
+                        insight: "Rasa takut adalah mekanisme pertahanan diri. Apa yang membuatmu cemas?"
+                    };
+                }
+                else if (label === 'love') {
+                    uiData = {
+                        emotion: "LOVE (Kasih Sayang)", 
+                        color: "#f472b6", 
+                        theme: "love",
+                        img: "https://cdn-icons-png.flaticon.com/512/2589/2589175.png", // Icon Hati
+                        insight: "Dunia terasa lebih indah dengan cinta. Sebarkan kasih sayang itu!"
                     };
                 }
 
